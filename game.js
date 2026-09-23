@@ -58,64 +58,105 @@ const W = 900;
 const H = 1240;
 const R = 11;
 
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const c = document.getElementById("game");
+const ctx = c.getContext("2d");
+
+const cc = document.getElementById("confetti");
+const cx = cc.getContext("2d");
 
 const playBtn = document.getElementById("play");
 const joltBtn = document.getElementById("jolt");
-const againBtn = document.getElementById("again");
 const soundBtn = document.getElementById("sound");
+const againBtn = document.getElementById("again");
 
 const resultsEl = document.getElementById("results");
 const timerEl = document.getElementById("timer");
+
+const winnerBanner = document.getElementById("winnerBanner");
+const winnerText = document.getElementById("winnerText");
+
+const crowd = document.getElementById("crowdCheer");
 
 let balls = [];
 let results = [];
 let running = false;
 
-let startTime = 0;
-let lastTimerUpdate = 0;
-
-
-// ======================================================
-// AUDIO
-// ======================================================
+let start = 0;
+let lastTimer = 0;
 
 let audioCtx = null;
 let soundOn = true;
 let musicTimer = null;
 
-function getAudioContext() {
+let confetti = [];
+
+
+// ======================================================
+// TEAM INITIALS
+// ======================================================
+
+const initials = name =>
+  name
+    .split(" ")
+    .map(word => word[0])
+    .join("")
+    .slice(0, 3);
+
+
+// ======================================================
+// AUDIO ENGINE
+// ======================================================
+
+function ac() {
+
   if (!audioCtx) {
+
     const AudioContextClass =
-      window.AudioContext || window.webkitAudioContext;
+      window.AudioContext ||
+      window.webkitAudioContext;
 
     if (!AudioContextClass) {
       return null;
     }
 
-    audioCtx = new AudioContextClass();
+    audioCtx =
+      new AudioContextClass();
   }
 
   return audioCtx;
 }
 
-async function unlockAudio() {
-  const ac = getAudioContext();
 
-  if (!ac) return false;
+async function unlock() {
 
-  if (ac.state === "suspended") {
+  const audio =
+    ac();
+
+  if (!audio) {
+    return false;
+  }
+
+  if (
+    audio.state ===
+    "suspended"
+  ) {
+
     try {
-      await ac.resume();
+
+      await audio.resume();
+
     } catch (error) {
-      console.log("Audio could not start:", error);
+
       return false;
     }
   }
 
-  return ac.state === "running";
+  return (
+    audio.state ===
+    "running"
+  );
 }
+
 
 function tone(
   frequency,
@@ -124,128 +165,309 @@ function tone(
   type = "sine",
   delay = 0
 ) {
-  if (!soundOn) return;
 
-  const ac = getAudioContext();
+  if (!soundOn) {
+    return;
+  }
 
-  if (!ac || ac.state !== "running") return;
+  const audio =
+    ac();
 
-  const time = ac.currentTime + delay;
+  if (
+    !audio ||
+    audio.state !==
+    "running"
+  ) {
+    return;
+  }
 
-  const oscillator = ac.createOscillator();
-  const gain = ac.createGain();
+  const oscillator =
+    audio.createOscillator();
 
-  oscillator.type = type;
-  oscillator.frequency.setValueAtTime(frequency, time);
+  const gain =
+    audio.createGain();
 
-  gain.gain.setValueAtTime(volume, time);
+  const time =
+    audio.currentTime +
+    delay;
+
+  oscillator.type =
+    type;
+
+  oscillator.frequency.setValueAtTime(
+    frequency,
+    time
+  );
+
+  gain.gain.setValueAtTime(
+    volume,
+    time
+  );
 
   gain.gain.exponentialRampToValueAtTime(
     0.001,
     time + duration
   );
 
-  oscillator.connect(gain);
-  gain.connect(ac.destination);
+  oscillator.connect(
+    gain
+  );
 
-  oscillator.start(time);
-  oscillator.stop(time + duration);
+  gain.connect(
+    audio.destination
+  );
+
+  oscillator.start(
+    time
+  );
+
+  oscillator.stop(
+    time + duration
+  );
 }
 
-function soundTest() {
-  tone(660, 0.12, 0.10, "sine", 0);
-  tone(880, 0.18, 0.10, "sine", 0.13);
+
+// ======================================================
+// START WHISTLE
+// ======================================================
+
+function whistle() {
+
+  tone(
+    1200,
+    0.18,
+    0.09,
+    "sine"
+  );
+
+  tone(
+    1500,
+    0.20,
+    0.09,
+    "sine",
+    0.20
+  );
+
+  tone(
+    1850,
+    0.45,
+    0.10,
+    "sine",
+    0.42
+  );
 }
 
-function startWhistle() {
-  tone(1200, 0.18, 0.10, "sine", 0);
-  tone(1500, 0.20, 0.10, "sine", 0.21);
-  tone(1850, 0.45, 0.12, "sine", 0.43);
-}
+
+// ======================================================
+// JOLT SOUND
+// ======================================================
 
 function joltSound() {
-  tone(140, 0.12, 0.12, "square", 0);
-  tone(90, 0.20, 0.10, "sawtooth", 0.08);
-  tone(220, 0.10, 0.07, "square", 0.15);
+
+  tone(
+    140,
+    0.12,
+    0.12,
+    "square"
+  );
+
+  tone(
+    90,
+    0.20,
+    0.10,
+    "sawtooth",
+    0.08
+  );
+
+  tone(
+    220,
+    0.10,
+    0.06,
+    "square",
+    0.14
+  );
 }
+
+
+// ======================================================
+// WINNER FANFARE
+// ======================================================
 
 function winnerSound() {
-  tone(523, 0.20, 0.10, "triangle", 0);
-  tone(659, 0.20, 0.10, "triangle", 0.16);
-  tone(784, 0.20, 0.10, "triangle", 0.32);
-  tone(1047, 0.60, 0.14, "triangle", 0.48);
+
+  tone(
+    523,
+    0.20,
+    0.09,
+    "triangle"
+  );
+
+  tone(
+    659,
+    0.20,
+    0.09,
+    "triangle",
+    0.15
+  );
+
+  tone(
+    784,
+    0.20,
+    0.09,
+    "triangle",
+    0.30
+  );
+
+  tone(
+    1047,
+    0.55,
+    0.12,
+    "triangle",
+    0.45
+  );
 }
 
-function startMusic() {
-  stopMusic();
 
-  if (!soundOn) return;
-
-  let beat = 0;
-
-  musicTimer = setInterval(() => {
-    if (!running || !soundOn) return;
-
-    if (beat % 4 === 0) {
-      tone(110, 0.10, 0.04, "triangle");
-    }
-
-    if (beat % 4 === 2) {
-      tone(165, 0.07, 0.03, "triangle");
-    }
-
-    if (beat % 8 === 6) {
-      tone(220, 0.05, 0.02, "sine");
-    }
-
-    beat++;
-  }, 350);
-}
+// ======================================================
+// SPORTING BACKGROUND RHYTHM
+// ======================================================
 
 function stopMusic() {
+
   if (musicTimer) {
-    clearInterval(musicTimer);
+
+    clearInterval(
+      musicTimer
+    );
+
     musicTimer = null;
   }
 }
 
 
-// ======================================================
-// GAME SETUP
-// ======================================================
+function startMusic() {
 
-function initials(name) {
-  return name
-    .split(" ")
-    .map(word => word[0])
-    .join("")
-    .slice(0, 3);
+  stopMusic();
+
+  if (!soundOn) {
+    return;
+  }
+
+  let beat = 0;
+
+  musicTimer =
+    setInterval(() => {
+
+      if (
+        !running ||
+        !soundOn
+      ) {
+        return;
+      }
+
+      if (
+        beat % 4 === 0
+      ) {
+
+        tone(
+          110,
+          0.10,
+          0.025,
+          "triangle"
+        );
+      }
+
+      if (
+        beat % 4 === 2
+      ) {
+
+        tone(
+          165,
+          0.07,
+          0.018,
+          "triangle"
+        );
+      }
+
+      if (
+        beat % 8 === 6
+      ) {
+
+        tone(
+          220,
+          0.05,
+          0.012
+        );
+      }
+
+      beat++;
+
+    }, 350);
 }
 
+
+// ======================================================
+// RESET GAME
+// ======================================================
+
 function reset() {
+
   stopMusic();
 
   results = [];
+  confetti = [];
+
+  cx.clearRect(
+    0,
+    0,
+    W,
+    H
+  );
+
+  winnerBanner.hidden =
+    true;
 
   resultsEl.innerHTML = `
     <p class="hint">
       Click <b>PLAY</b> to launch every marble at once.
-      Positions will appear here as each team crosses the line.
+      Positions appear here at the finish.
     </p>
   `;
 
-  againBtn.hidden = true;
-  timerEl.textContent = "";
+  againBtn.hidden =
+    true;
 
-  balls = TEAMS.map((name, i) => ({
-    name,
-    color: COLORS[i],
-    x: 80 + (i % 12) * 67,
-    y: 60 - Math.floor(i / 12) * 28,
-    vx: (Math.random() - 0.5) * 2,
-    vy: 0,
-    done: false
-  }));
+  timerEl.textContent =
+    "";
+
+  balls =
+    TEAMS.map(
+      (name, i) => ({
+
+        name,
+
+        color:
+          COLORS[i],
+
+        x:
+          80 +
+          (i % 12) * 67,
+
+        y:
+          60 -
+          Math.floor(i / 12) *
+          28,
+
+        vx:
+          (Math.random() - 0.5) *
+          2,
+
+        vy: 0,
+
+        done: false
+
+      })
+    );
 }
 
 
@@ -254,28 +476,37 @@ function reset() {
 // ======================================================
 
 async function play() {
+
   if (soundOn) {
-    await unlockAudio();
+    await unlock();
   }
 
   reset();
 
-  startTime = performance.now();
-  lastTimerUpdate = startTime;
+  start =
+    performance.now();
 
-  running = true;
+  running =
+    true;
 
-  playBtn.disabled = true;
-  playBtn.textContent = "🏁 RACING...";
+  playBtn.disabled =
+    true;
 
-  joltBtn.disabled = false;
+  playBtn.textContent =
+    "🏁 RACING...";
+
+  joltBtn.disabled =
+    false;
 
   if (
     soundOn &&
     audioCtx &&
-    audioCtx.state === "running"
+    audioCtx.state ===
+    "running"
   ) {
-    startWhistle();
+
+    whistle();
+
     startMusic();
   }
 }
@@ -286,20 +517,36 @@ async function play() {
 // ======================================================
 
 function jolt() {
-  if (!running) return;
 
-  balls.forEach(ball => {
-    if (!ball.done) {
-      ball.vx += (Math.random() - 0.5) * 5;
-      ball.vy -= 1.5 + Math.random() * 2.5;
-      ball.x += (Math.random() - 0.5) * 5;
+  if (!running) {
+    return;
+  }
+
+  balls.forEach(
+    ball => {
+
+      if (!ball.done) {
+
+        ball.vx +=
+          (Math.random() - 0.5) *
+          5;
+
+        ball.vy -=
+          1.5 +
+          Math.random() *
+          2.5;
+
+        ball.x +=
+          (Math.random() - 0.5) *
+          5;
+      }
     }
-  });
+  );
 }
 
 
 // ======================================================
-// OBSTACLE COLLISIONS
+// OBSTACLE COLLISION
 // ======================================================
 
 function seg(
@@ -310,79 +557,282 @@ function seg(
   y2,
   width = 10
 ) {
-  const dx = x2 - x1;
-  const dy = y2 - y1;
 
-  const lengthSquared =
-    dx * dx + dy * dy;
+  let dx =
+    x2 - x1;
+
+  let dy =
+    y2 - y1;
+
+  let length =
+    dx * dx +
+    dy * dy;
 
   let t =
     (
       (ball.x - x1) * dx +
       (ball.y - y1) * dy
-    ) / lengthSquared;
+    ) /
+    length;
 
-  t = Math.max(0, Math.min(1, t));
+  t =
+    Math.max(
+      0,
+      Math.min(
+        1,
+        t
+      )
+    );
 
-  const px = x1 + t * dx;
-  const py = y1 + t * dy;
+  let px =
+    x1 + t * dx;
 
-  const nx = ball.x - px;
-  const ny = ball.y - py;
+  let py =
+    y1 + t * dy;
 
-  const distance = Math.hypot(nx, ny);
+  let nx =
+    ball.x - px;
+
+  let ny =
+    ball.y - py;
+
+  let distance =
+    Math.hypot(
+      nx,
+      ny
+    );
 
   if (
-    distance < R + width &&
-    distance > 0.01
+    distance <
+      R + width &&
+    distance >
+      0.01
   ) {
-    const ux = nx / distance;
-    const uy = ny / distance;
+
+    let ux =
+      nx / distance;
+
+    let uy =
+      ny / distance;
 
     ball.x =
-      px + ux * (R + width + 0.5);
+      px +
+      ux *
+      (R + width + 0.5);
 
     ball.y =
-      py + uy * (R + width + 0.5);
+      py +
+      uy *
+      (R + width + 0.5);
 
-    const dot =
+    let dot =
       ball.vx * ux +
       ball.vy * uy;
 
-    if (dot < 0) {
-      ball.vx -= 1.72 * dot * ux;
-      ball.vy -= 1.72 * dot * uy;
+    if (
+      dot < 0
+    ) {
+
+      ball.vx -=
+        1.72 *
+        dot *
+        ux;
+
+      ball.vy -=
+        1.72 *
+        dot *
+        uy;
     }
   }
 }
 
-function peg(ball, x, y) {
-  const dx = ball.x - x;
-  const dy = ball.y - y;
 
-  const distance = Math.hypot(dx, dy);
+// ======================================================
+// PEG COLLISION
+// ======================================================
+
+function peg(
+  ball,
+  x,
+  y
+) {
+
+  let dx =
+    ball.x - x;
+
+  let dy =
+    ball.y - y;
+
+  let distance =
+    Math.hypot(
+      dx,
+      dy
+    );
 
   if (
-    distance < R + 11 &&
-    distance > 0.01
+    distance <
+      R + 11 &&
+    distance >
+      0.01
   ) {
-    const ux = dx / distance;
-    const uy = dy / distance;
+
+    let ux =
+      dx / distance;
+
+    let uy =
+      dy / distance;
 
     ball.x =
-      x + ux * (R + 11);
+      x +
+      ux *
+      (R + 11);
 
     ball.y =
-      y + uy * (R + 11);
+      y +
+      uy *
+      (R + 11);
 
-    const dot =
+    let dot =
       ball.vx * ux +
       ball.vy * uy;
 
-    if (dot < 0) {
-      ball.vx -= 1.75 * dot * ux;
-      ball.vy -= 1.75 * dot * uy;
+    if (
+      dot < 0
+    ) {
+
+      ball.vx -=
+        1.75 *
+        dot *
+        ux;
+
+      ball.vy -=
+        1.75 *
+        dot *
+        uy;
     }
+  }
+}
+
+
+// ======================================================
+// WINNER CELEBRATION
+// ======================================================
+
+function celebrate(name) {
+
+  winnerText.textContent =
+    name + " WINS!";
+
+  winnerBanner.hidden =
+    false;
+
+  setTimeout(
+    () => {
+
+      winnerBanner.hidden =
+        true;
+
+    },
+    5000
+  );
+
+
+  // Winner fanfare
+
+  winnerSound();
+
+
+  // Real crowd cheer MP3
+
+  if (
+    soundOn &&
+    crowd
+  ) {
+
+    crowd.currentTime =
+      0;
+
+    crowd.volume =
+      0.75;
+
+    crowd
+      .play()
+      .catch(
+        () => {}
+      );
+  }
+
+
+  // Confetti colours
+
+  const colours = [
+    "#facc15",
+    "#ef4444",
+    "#3b82f6",
+    "#22c55e",
+    "#a855f7",
+    "#f97316",
+    "#ec4899",
+    "#ffffff"
+  ];
+
+
+  for (
+    let i = 0;
+    i < 250;
+    i++
+  ) {
+
+    confetti.push({
+
+      x:
+        W / 2 +
+        (Math.random() - 0.5) *
+        500,
+
+      y:
+        H - 100,
+
+      vx:
+        (Math.random() - 0.5) *
+        9,
+
+      vy:
+        -5 -
+        Math.random() *
+        13,
+
+      gravity:
+        0.12 +
+        Math.random() *
+        0.08,
+
+      rotation:
+        Math.random() *
+        Math.PI *
+        2,
+
+      rotationSpeed:
+        (Math.random() - 0.5) *
+        0.3,
+
+      size:
+        5 +
+        Math.random() *
+        8,
+
+      colour:
+        colours[
+          Math.floor(
+            Math.random() *
+            colours.length
+          )
+        ],
+
+      life:
+        300
+
+    });
   }
 }
 
@@ -392,276 +842,515 @@ function peg(ball, x, y) {
 // ======================================================
 
 function addResult(ball) {
-  results.push(ball.name);
 
-  if (results.length === 1) {
-    winnerSound();
+  results.push(
+    ball.name
+  );
+
+
+  if (
+    results.length === 1
+  ) {
+
+    celebrate(
+      ball.name
+    );
   }
 
+
   const list =
-    document.createElement("ol");
+    document.createElement(
+      "ol"
+    );
 
-  results.forEach((name, i) => {
-    const item =
-      document.createElement("li");
 
-    if (i === 0) {
-      item.className = "gold";
-    } else if (i === 1) {
-      item.className = "silver";
-    } else if (i === 2) {
-      item.className = "bronze";
+  results.forEach(
+    (name, i) => {
+
+      const item =
+        document.createElement(
+          "li"
+        );
+
+
+      if (
+        i === 0
+      ) {
+
+        item.className =
+          "gold";
+
+      } else if (
+        i === 1
+      ) {
+
+        item.className =
+          "silver";
+
+      } else if (
+        i === 2
+      ) {
+
+        item.className =
+          "bronze";
+      }
+
+
+      item.innerHTML = `
+        <span class="rank">
+          ${i + 1}
+        </span>
+
+        <span
+          class="dot"
+          style="background:${COLORS[TEAMS.indexOf(name)]}"
+        ></span>
+
+        <span>
+          ${name}
+        </span>
+      `;
+
+
+      list.appendChild(
+        item
+      );
     }
+  );
 
-    item.innerHTML = `
-      <span class="rank">${i + 1}</span>
-      <span
-        class="dot"
-        style="background:${COLORS[TEAMS.indexOf(name)]}"
-      ></span>
-      <span>${name}</span>
-    `;
 
-    list.appendChild(item);
-  });
+  resultsEl.replaceChildren(
+    list
+  );
 
-  resultsEl.replaceChildren(list);
 
-  if (results.length === TEAMS.length) {
+  if (
+    results.length ===
+    TEAMS.length
+  ) {
+
     stopMusic();
 
-    running = false;
+    running =
+      false;
 
-    playBtn.disabled = false;
-    playBtn.textContent = "▶ PLAY";
+    playBtn.disabled =
+      false;
 
-    joltBtn.disabled = true;
-    againBtn.hidden = false;
+    playBtn.textContent =
+      "▶ PLAY";
+
+    joltBtn.disabled =
+      true;
+
+    againBtn.hidden =
+      false;
   }
 }
 
 
 // ======================================================
-// PHYSICS
+// GAME PHYSICS
 // ======================================================
 
 function update(now) {
-  if (now - lastTimerUpdate > 100) {
-    timerEl.textContent =
-      ((now - startTime) / 1000).toFixed(1) + "s";
 
-    lastTimerUpdate = now;
+  if (
+    now -
+    lastTimer >
+    100
+  ) {
+
+    timerEl.textContent =
+      (
+        (now - start) /
+        1000
+      ).toFixed(1) +
+      "s";
+
+    lastTimer =
+      now;
   }
 
-  const rotation = now / 550;
 
-  balls.forEach(ball => {
-    if (ball.done) return;
-
-    // Gravity
-    ball.vy += 0.085;
-
-    // Small random sideways movement
-    ball.vx +=
-      (Math.random() - 0.5) * 0.028;
-
-    ball.vx *= 0.998;
-    ball.vy = Math.min(6, ball.vy);
-
-    ball.x += ball.vx;
-    ball.y += ball.vy;
+  const rotation =
+    now / 550;
 
 
-    // LEFT WALL
+  balls.forEach(
+    ball => {
 
-    if (ball.x < 42 + R) {
-      ball.x = 42 + R;
-      ball.vx =
-        Math.abs(ball.vx) * 0.8;
-    }
-
-
-    // RIGHT WALL
-
-    if (ball.x > W - 42 - R) {
-      ball.x = W - 42 - R;
-      ball.vx =
-        -Math.abs(ball.vx) * 0.8;
-    }
-
-
-    // ==================================================
-    // 1. PEG SLALOM
-    // ==================================================
-
-    for (let row = 0; row < 3; row++) {
-      for (
-        let x = 105 + (row % 2) * 45;
-        x < W - 70;
-        x += 90
+      if (
+        ball.done
       ) {
-        peg(
-          ball,
-          x,
-          190 + row * 45
-        );
+        return;
       }
-    }
 
 
-    // ==================================================
-    // 2. GATE DROP
-    // ==================================================
+      // Gravity
 
-    seg(
-      ball,
-      55,
-      390,
-      380,
-      390
-    );
-
-    seg(
-      ball,
-      520,
-      460,
-      845,
-      460
-    );
+      ball.vy +=
+        0.085;
 
 
-    // ==================================================
-    // 3. THE FUNNEL
-    // ==================================================
+      // Random movement
 
-    seg(
-      ball,
-      50,
-      600,
-      390,
-      720
-    );
-
-    seg(
-      ball,
-      850,
-      600,
-      510,
-      720
-    );
+      ball.vx +=
+        (
+          Math.random() -
+          0.5
+        ) *
+        0.028;
 
 
-    // ==================================================
-    // 4. ROTATING CROSS
-    // ==================================================
+      ball.vx *=
+        0.998;
 
-    for (let q = 0; q < 2; q++) {
-      const angle =
-        rotation +
-        q * Math.PI / 2;
 
-      const dx =
-        Math.cos(angle) * 125;
+      ball.vy =
+        Math.min(
+          6,
+          ball.vy
+        );
 
-      const dy =
-        Math.sin(angle) * 125;
+
+      ball.x +=
+        ball.vx;
+
+      ball.y +=
+        ball.vy;
+
+
+      // Left wall
+
+      if (
+        ball.x <
+        42 + R
+      ) {
+
+        ball.x =
+          42 + R;
+
+        ball.vx =
+          Math.abs(
+            ball.vx
+          ) *
+          0.8;
+      }
+
+
+      // Right wall
+
+      if (
+        ball.x >
+        W - 42 - R
+      ) {
+
+        ball.x =
+          W - 42 - R;
+
+        ball.vx =
+          -Math.abs(
+            ball.vx
+          ) *
+          0.8;
+      }
+
+
+      // ==================================================
+      // PEG SLALOM
+      // ==================================================
+
+      for (
+        let row = 0;
+        row < 3;
+        row++
+      ) {
+
+        for (
+          let x =
+            105 +
+            (row % 2) *
+            45;
+
+          x <
+          W - 70;
+
+          x +=
+            90
+        ) {
+
+          peg(
+            ball,
+            x,
+            190 +
+            row *
+            45
+          );
+        }
+      }
+
+
+      // ==================================================
+      // GATE DROP
+      // ==================================================
 
       seg(
         ball,
-        W / 2 - dx,
-        815 - dy,
-        W / 2 + dx,
-        815 + dy,
-        9
+        55,
+        390,
+        380,
+        390
       );
-    }
+
+      seg(
+        ball,
+        520,
+        460,
+        845,
+        460
+      );
 
 
-    // ==================================================
-    // 5. PINBALL ALLEY
-    // ==================================================
+      // ==================================================
+      // THE FUNNEL
+      // ==================================================
 
-    for (let row = 0; row < 3; row++) {
+      seg(
+        ball,
+        50,
+        600,
+        390,
+        720
+      );
+
+      seg(
+        ball,
+        850,
+        600,
+        510,
+        720
+      );
+
+
+      // ==================================================
+      // ROTATING CROSS
+      // ==================================================
+
       for (
-        let x = 105 + (row % 2) * 45;
-        x < W - 70;
-        x += 90
+        let q = 0;
+        q < 2;
+        q++
       ) {
-        peg(
+
+        let angle =
+          rotation +
+          q *
+          Math.PI /
+          2;
+
+        let dx =
+          Math.cos(
+            angle
+          ) *
+          125;
+
+        let dy =
+          Math.sin(
+            angle
+          ) *
+          125;
+
+        seg(
           ball,
-          x,
-          965 + row * 45
+          W / 2 - dx,
+          815 - dy,
+          W / 2 + dx,
+          815 + dy,
+          9
         );
       }
+
+
+      // ==================================================
+      // PINBALL ALLEY
+      // ==================================================
+
+      for (
+        let row = 0;
+        row < 3;
+        row++
+      ) {
+
+        for (
+          let x =
+            105 +
+            (row % 2) *
+            45;
+
+          x <
+          W - 70;
+
+          x +=
+            90
+        ) {
+
+          peg(
+            ball,
+            x,
+            965 +
+            row *
+            45
+          );
+        }
+      }
+
+
+      // FINISH
+
+      if (
+        ball.y >=
+        H - 70
+      ) {
+
+        ball.y =
+          H - 70;
+
+        ball.done =
+          true;
+
+        addResult(
+          ball
+        );
+      }
+
     }
-
-
-    // FINISH
-
-    if (ball.y >= H - 70) {
-      ball.y = H - 70;
-      ball.done = true;
-
-      addResult(ball);
-    }
-  });
+  );
 
 
   // ====================================================
-  // MARBLE-TO-MARBLE COLLISIONS
+  // MARBLE COLLISIONS
   // ====================================================
 
-  for (let i = 0; i < balls.length; i++) {
+  for (
+    let i = 0;
+    i <
+    balls.length;
+    i++
+  ) {
+
     for (
-      let j = i + 1;
-      j < balls.length;
+      let j =
+        i + 1;
+      j <
+        balls.length;
       j++
     ) {
-      const A = balls[i];
-      const B = balls[j];
 
-      if (A.done || B.done) {
+      let A =
+        balls[i];
+
+      let B =
+        balls[j];
+
+
+      if (
+        A.done ||
+        B.done
+      ) {
         continue;
       }
 
-      const dx = B.x - A.x;
-      const dy = B.y - A.y;
 
-      const distance =
-        Math.hypot(dx, dy);
+      let dx =
+        B.x - A.x;
+
+      let dy =
+        B.y - A.y;
+
+      let distance =
+        Math.hypot(
+          dx,
+          dy
+        );
+
 
       if (
         distance > 0 &&
-        distance < 2 * R
+        distance <
+        2 * R
       ) {
-        const ux = dx / distance;
-        const uy = dy / distance;
 
-        const overlap =
-          2 * R - distance;
+        let ux =
+          dx / distance;
 
-        A.x -= ux * overlap / 2;
-        A.y -= uy * overlap / 2;
+        let uy =
+          dy / distance;
 
-        B.x += ux * overlap / 2;
-        B.y += uy * overlap / 2;
+        let overlap =
+          2 * R -
+          distance;
 
-        const relative =
-          (B.vx - A.vx) * ux +
-          (B.vy - A.vy) * uy;
 
-        if (relative < 0) {
+        A.x -=
+          ux *
+          overlap /
+          2;
+
+        A.y -=
+          uy *
+          overlap /
+          2;
+
+
+        B.x +=
+          ux *
+          overlap /
+          2;
+
+        B.y +=
+          uy *
+          overlap /
+          2;
+
+
+        let relative =
+          (
+            B.vx -
+            A.vx
+          ) *
+          ux +
+          (
+            B.vy -
+            A.vy
+          ) *
+          uy;
+
+
+        if (
+          relative < 0
+        ) {
+
           A.vx +=
-            relative * ux * 0.9;
+            relative *
+            ux *
+            0.9;
 
           A.vy +=
-            relative * uy * 0.9;
+            relative *
+            uy *
+            0.9;
+
 
           B.vx -=
-            relative * ux * 0.9;
+            relative *
+            ux *
+            0.9;
 
           B.vy -=
-            relative * uy * 0.9;
+            relative *
+            uy *
+            0.9;
         }
       }
     }
@@ -670,10 +1359,89 @@ function update(now) {
 
 
 // ======================================================
-// DRAW GAME
+// CONFETTI PHYSICS
+// ======================================================
+
+function updateConfetti() {
+
+  confetti.forEach(
+    piece => {
+
+      piece.x +=
+        piece.vx;
+
+      piece.y +=
+        piece.vy;
+
+      piece.vy +=
+        piece.gravity;
+
+      piece.rotation +=
+        piece.rotationSpeed;
+
+      piece.life--;
+
+    }
+  );
+
+
+  confetti =
+    confetti.filter(
+      piece =>
+        piece.life > 0 &&
+        piece.y <
+        H + 50
+    );
+}
+
+
+function drawConfetti() {
+
+  cx.clearRect(
+    0,
+    0,
+    W,
+    H
+  );
+
+
+  confetti.forEach(
+    piece => {
+
+      cx.save();
+
+      cx.translate(
+        piece.x,
+        piece.y
+      );
+
+      cx.rotate(
+        piece.rotation
+      );
+
+      cx.fillStyle =
+        piece.colour;
+
+      cx.fillRect(
+        -piece.size / 2,
+        -piece.size / 2,
+        piece.size,
+        piece.size * 0.55
+      );
+
+      cx.restore();
+
+    }
+  );
+}
+
+
+// ======================================================
+// DRAW RACECOURSE
 // ======================================================
 
 function draw() {
+
   ctx.clearRect(
     0,
     0,
@@ -682,13 +1450,14 @@ function draw() {
   );
 
 
-  // PITCH
+  // Pitch stripes
 
   for (
     let y = 0;
     y < H;
     y += 80
   ) {
+
     ctx.fillStyle =
       (y / 80) % 2
         ? "#075f39"
@@ -703,12 +1472,13 @@ function draw() {
   }
 
 
-  // PITCH BORDER
+  // Pitch border
 
   ctx.strokeStyle =
     "rgba(255,255,255,.5)";
 
-  ctx.lineWidth = 3;
+  ctx.lineWidth =
+    3;
 
   ctx.strokeRect(
     30,
@@ -718,14 +1488,15 @@ function draw() {
   );
 
 
-  // START / FINISH
-
-  ctx.textAlign = "center";
+  ctx.textAlign =
+    "center";
 
   ctx.font =
     "900 23px system-ui";
 
-  ctx.fillStyle = "#fff";
+  ctx.fillStyle =
+    "#fff";
+
 
   ctx.fillText(
     "START",
@@ -740,7 +1511,7 @@ function draw() {
   );
 
 
-  // FINISH LINE
+  // Finish line
 
   ctx.beginPath();
 
@@ -757,7 +1528,7 @@ function draw() {
   ctx.stroke();
 
 
-  // LABELS
+  // Obstacle labels
 
   ctx.font =
     "800 15px system-ui";
@@ -765,52 +1536,73 @@ function draw() {
   ctx.fillStyle =
     "rgba(255,255,255,.85)";
 
-  const labels = [
+
+  [
     "1  PEG SLALOM",
     "2  GATE DROP",
     "3  THE FUNNEL",
     "4  ROTATING CROSS",
     "5  PINBALL ALLEY"
-  ];
+  ].forEach(
+    (text, i) => {
 
-  const labelPositions = [
-    155,
-    360,
-    570,
-    775,
-    935
-  ];
-
-  labels.forEach(
-    (label, index) => {
       ctx.fillText(
-        label,
+        text,
         W / 2,
-        labelPositions[index]
+        [
+          155,
+          360,
+          570,
+          775,
+          935
+        ][i]
       );
+
     }
   );
 
 
-  // YELLOW PEGS
+  // Yellow pegs
 
-  ctx.fillStyle = "#facc15";
+  ctx.fillStyle =
+    "#facc15";
 
-  for (const base of [190, 965]) {
-    for (let row = 0; row < 3; row++) {
+
+  for (
+    const base of
+    [190, 965]
+  ) {
+
+    for (
+      let row = 0;
+      row < 3;
+      row++
+    ) {
+
       for (
-        let x = 105 + (row % 2) * 45;
-        x < W - 70;
-        x += 90
+        let x =
+          105 +
+          (row % 2) *
+          45;
+
+        x <
+        W - 70;
+
+        x +=
+          90
       ) {
+
         ctx.beginPath();
 
         ctx.arc(
           x,
-          base + row * 45,
+          base +
+          row *
+          45,
           11,
           0,
-          Math.PI * 2
+          Math.PI *
+          2
         );
 
         ctx.fill();
@@ -819,42 +1611,77 @@ function draw() {
   }
 
 
-  // BLUE GATE DROP
+  // Gate Drop
 
-  ctx.strokeStyle = "#38bdf8";
-  ctx.lineWidth = 20;
+  ctx.strokeStyle =
+    "#38bdf8";
+
+  ctx.lineWidth =
+    20;
 
   ctx.beginPath();
 
-  ctx.moveTo(55, 390);
-  ctx.lineTo(380, 390);
+  ctx.moveTo(
+    55,
+    390
+  );
 
-  ctx.moveTo(520, 460);
-  ctx.lineTo(845, 460);
+  ctx.lineTo(
+    380,
+    390
+  );
+
+  ctx.moveTo(
+    520,
+    460
+  );
+
+  ctx.lineTo(
+    845,
+    460
+  );
 
   ctx.stroke();
 
 
-  // ORANGE FUNNEL
+  // Funnel
 
-  ctx.strokeStyle = "#fb923c";
-  ctx.lineWidth = 18;
+  ctx.strokeStyle =
+    "#fb923c";
+
+  ctx.lineWidth =
+    18;
 
   ctx.beginPath();
 
-  ctx.moveTo(50, 600);
-  ctx.lineTo(390, 720);
+  ctx.moveTo(
+    50,
+    600
+  );
 
-  ctx.moveTo(850, 600);
-  ctx.lineTo(510, 720);
+  ctx.lineTo(
+    390,
+    720
+  );
+
+  ctx.moveTo(
+    850,
+    600
+  );
+
+  ctx.lineTo(
+    510,
+    720
+  );
 
   ctx.stroke();
 
 
-  // ROTATING CROSS
+  // Rotating cross
 
-  const rotation =
-    performance.now() / 550;
+  let rotation =
+    performance.now() /
+    550;
 
   ctx.save();
 
@@ -863,85 +1690,124 @@ function draw() {
     815
   );
 
-  ctx.rotate(rotation);
+  ctx.rotate(
+    rotation
+  );
 
-  ctx.strokeStyle = "#c084fc";
-  ctx.lineWidth = 18;
+  ctx.strokeStyle =
+    "#c084fc";
+
+  ctx.lineWidth =
+    18;
 
   ctx.beginPath();
 
-  ctx.moveTo(-125, 0);
-  ctx.lineTo(125, 0);
+  ctx.moveTo(
+    -125,
+    0
+  );
 
-  ctx.moveTo(0, -125);
-  ctx.lineTo(0, 125);
+  ctx.lineTo(
+    125,
+    0
+  );
+
+  ctx.moveTo(
+    0,
+    -125
+  );
+
+  ctx.lineTo(
+    0,
+    125
+  );
 
   ctx.stroke();
 
   ctx.restore();
 
 
-  // MARBLES
+  // Marbles
 
-  balls.forEach(ball => {
-    ctx.shadowColor =
-      "rgba(0,0,0,.8)";
+  balls.forEach(
+    ball => {
 
-    ctx.shadowBlur = 8;
+      ctx.shadowColor =
+        "#000";
 
-    ctx.fillStyle =
-      ball.color;
+      ctx.shadowBlur =
+        8;
 
-    ctx.beginPath();
+      ctx.fillStyle =
+        ball.color;
 
-    ctx.arc(
-      ball.x,
-      ball.y,
-      R,
-      0,
-      Math.PI * 2
-    );
+      ctx.beginPath();
 
-    ctx.fill();
+      ctx.arc(
+        ball.x,
+        ball.y,
+        R,
+        0,
+        Math.PI *
+        2
+      );
 
-    ctx.shadowBlur = 0;
+      ctx.fill();
 
-    ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 2;
+      ctx.shadowBlur =
+        0;
 
-    ctx.stroke();
+      ctx.strokeStyle =
+        "#fff";
 
-    ctx.fillStyle = "#fff";
+      ctx.lineWidth =
+        2;
 
-    ctx.font =
-      "900 7px system-ui";
+      ctx.stroke();
 
-    ctx.fillText(
-      initials(ball.name),
-      ball.x,
-      ball.y + 2.5
-    );
-  });
+      ctx.fillStyle =
+        "#fff";
+
+      ctx.font =
+        "900 7px system-ui";
+
+      ctx.fillText(
+        initials(
+          ball.name
+        ),
+        ball.x,
+        ball.y + 2.5
+      );
+
+    }
+  );
 }
 
 
 // ======================================================
-// ANIMATION LOOP
+// MAIN LOOP
 // ======================================================
 
 function loop(now) {
+
   if (running) {
     update(now);
   }
 
+  updateConfetti();
+
   draw();
 
-  requestAnimationFrame(loop);
+  drawConfetti();
+
+  requestAnimationFrame(
+    loop
+  );
 }
 
 
 // ======================================================
-// BUTTON EVENTS
+// BUTTONS
 // ======================================================
 
 playBtn.addEventListener(
@@ -955,7 +1821,7 @@ joltBtn.addEventListener(
   async () => {
 
     if (soundOn) {
-      await unlockAudio();
+      await unlock();
     }
 
     jolt();
@@ -963,6 +1829,7 @@ joltBtn.addEventListener(
     if (soundOn) {
       joltSound();
     }
+
   }
 );
 
@@ -979,9 +1846,14 @@ soundBtn.addEventListener(
 
     if (soundOn) {
 
-      soundOn = false;
+      soundOn =
+        false;
 
       stopMusic();
+
+      if (crowd) {
+        crowd.pause();
+      }
 
       soundBtn.textContent =
         "🔇 SOUND OFF";
@@ -990,32 +1862,49 @@ soundBtn.addEventListener(
     }
 
 
-    soundOn = true;
+    soundOn =
+      true;
 
     soundBtn.textContent =
       "🔊 SOUND ON";
 
 
-    const audioWorking =
-      await unlockAudio();
+    if (
+      await unlock()
+    ) {
 
+      // Confirmation sound
 
-    if (audioWorking) {
+      tone(
+        660,
+        0.12,
+        0.08
+      );
 
-      soundTest();
+      tone(
+        880,
+        0.18,
+        0.08,
+        "sine",
+        0.13
+      );
+
 
       if (running) {
         startMusic();
       }
     }
+
   }
 );
 
 
 // ======================================================
-// INITIALISE
+// START
 // ======================================================
 
 reset();
 
-requestAnimationFrame(loop);
+requestAnimationFrame(
+  loop
+);
