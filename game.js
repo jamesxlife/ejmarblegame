@@ -1,3 +1,8 @@
+// ======================================================
+// EJ'S FOOTBALL MARBLE CUP
+// 25 TEAM VERSION WITH AUDIO
+// ======================================================
+
 const TEAMS = [
   "Arsenal",
   "Aston Villa",
@@ -54,101 +59,13 @@ const COLORS = [
   "#f59e0b"
 ];
 
+
+// ======================================================
+// GAME CONSTANTS
+// ======================================================
+
 const W = 900;
 const H = 1240;
 const R = 11;
 
-const c = document.getElementById("game");
-const ctx = c.getContext("2d");
-
-const playBtn = document.getElementById("play");
-const joltBtn = document.getElementById("jolt");
-const againBtn = document.getElementById("again");
-const resultsEl = document.getElementById("results");
-const timerEl = document.getElementById("timer");
-const soundBtn = document.getElementById("sound");
-
-let balls = [];
-let results = [];
-let running = false;
-let start = 0;
-let lastTimer = 0;
-
-
-// ======================================================
-// EJ'S FOOTBALL MARBLE CUP AUDIO
-// ======================================================
-
-let audioCtx = null;
-let soundOn = true;
-let musicTimer = null;
-
-function getAudio() {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-
-  if (audioCtx.state === "suspended") {
-    audioCtx.resume();
-  }
-
-  return audioCtx;
-}
-
-
-function tone(
-  freq,
-  duration = 0.15,
-  volume = 0.08,
-  type = "sine",
-  delay = 0
-) {
-  if (!soundOn) return;
-
-  const ac = getAudio();
-  const osc = ac.createOscillator();
-  const gain = ac.createGain();
-
-  osc.type = type;
-  osc.frequency.value = freq;
-
-  gain.gain.setValueAtTime(
-    volume,
-    ac.currentTime + delay
-  );
-
-  gain.gain.exponentialRampToValueAtTime(
-    0.001,
-    ac.currentTime + delay + duration
-  );
-
-  osc.connect(gain);
-  gain.connect(ac.destination);
-
-  osc.start(ac.currentTime + delay);
-  osc.stop(ac.currentTime + delay + duration);
-}
-
-
-// ======================================================
-// STARTING WHISTLE
-// ======================================================
-
-function startWhistle() {
-  if (!soundOn) return;
-
-  tone(1200, 0.18, 0.09, "sine", 0);
-  tone(1500, 0.20, 0.09, "sine", 0.20);
-  tone(1850, 0.45, 0.10, "sine", 0.42);
-}
-
-
-// ======================================================
-// JOLT SOUND
-// ======================================================
-
-function joltSound() {
-  if (!soundOn) return;
-
-  tone(140, 0.12, 0.12, "square");
-  tone
+const canvas = document.getElementById
