@@ -1,10 +1,6 @@
 // ======================================================
 // EJ'S FOOTBALL MARBLE CUP
-// ======================================================
-
-
-// ======================================================
-// TEAMS
+// 25 TEAMS + AUDIO + CROWD + CONFETTI
 // ======================================================
 
 const TEAMS = [
@@ -34,11 +30,6 @@ const TEAMS = [
   "Tonna FC",
   "YG Castell-Nedd FC"
 ];
-
-
-// ======================================================
-// MARBLE COLOURS
-// ======================================================
 
 const COLORS = [
   "#e11d48",
@@ -70,28 +61,48 @@ const COLORS = [
 
 
 // ======================================================
-// GAME CONSTANTS
+// GAME ELEMENTS
 // ======================================================
 
 const W = 900;
 const H = 1240;
 const R = 11;
 
-
-// ======================================================
-// PAGE ELEMENTS
-// ======================================================
-
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const playBtn = document.getElementById("play");
-const joltBtn = document.getElementById("jolt");
-const soundBtn = document.getElementById("sound");
-const againBtn = document.getElementById("again");
+const confettiCanvas =
+  document.getElementById("confetti");
 
-const resultsEl = document.getElementById("results");
-const timerEl = document.getElementById("timer");
+const confettiCtx =
+  confettiCanvas.getContext("2d");
+
+const playBtn =
+  document.getElementById("play");
+
+const joltBtn =
+  document.getElementById("jolt");
+
+const soundBtn =
+  document.getElementById("sound");
+
+const againBtn =
+  document.getElementById("again");
+
+const resultsEl =
+  document.getElementById("results");
+
+const timerEl =
+  document.getElementById("timer");
+
+const winnerBanner =
+  document.getElementById("winnerBanner");
+
+const winnerText =
+  document.getElementById("winnerText");
+
+const crowdCheer =
+  document.getElementById("crowdCheer");
 
 
 // ======================================================
@@ -108,19 +119,13 @@ let lastTimerUpdate = 0;
 
 
 // ======================================================
-// AUDIO STATE
+// AUDIO
 // ======================================================
 
 let audioCtx = null;
-
 let soundOn = true;
-
 let musicTimer = null;
 
-
-// ======================================================
-// AUDIO
-// ======================================================
 
 function getAudioContext() {
 
@@ -130,52 +135,35 @@ function getAudioContext() {
       window.AudioContext ||
       window.webkitAudioContext;
 
-
     if (!AudioContextClass) {
-
-      console.log(
-        "Web Audio is not supported by this browser."
-      );
-
       return null;
     }
-
 
     audioCtx =
       new AudioContextClass();
   }
 
-
   return audioCtx;
 }
 
-
-// ======================================================
-// UNLOCK AUDIO
-// ======================================================
 
 async function unlockAudio() {
 
   const ac =
     getAudioContext();
 
-
   if (!ac) {
     return false;
   }
 
-
   if (ac.state === "suspended") {
 
     try {
-
       await ac.resume();
-
     }
     catch (error) {
-
       console.log(
-        "Unable to start audio:",
+        "Audio could not start:",
         error
       );
 
@@ -183,16 +171,9 @@ async function unlockAudio() {
     }
   }
 
-
-  return (
-    ac.state === "running"
-  );
+  return ac.state === "running";
 }
 
-
-// ======================================================
-// GENERATE A TONE
-// ======================================================
 
 function tone(
   frequency,
@@ -206,10 +187,8 @@ function tone(
     return;
   }
 
-
   const ac =
     getAudioContext();
-
 
   if (
     !ac ||
@@ -218,55 +197,40 @@ function tone(
     return;
   }
 
-
   const time =
     ac.currentTime + delay;
-
 
   const oscillator =
     ac.createOscillator();
 
-
   const gain =
     ac.createGain();
 
-
   oscillator.type =
     type;
-
 
   oscillator.frequency.setValueAtTime(
     frequency,
     time
   );
 
-
   gain.gain.setValueAtTime(
     volume,
     time
   );
-
 
   gain.gain.exponentialRampToValueAtTime(
     0.001,
     time + duration
   );
 
-
-  oscillator.connect(
-    gain
-  );
-
+  oscillator.connect(gain);
 
   gain.connect(
     ac.destination
   );
 
-
-  oscillator.start(
-    time
-  );
-
+  oscillator.start(time);
 
   oscillator.stop(
     time + duration
@@ -275,7 +239,7 @@ function tone(
 
 
 // ======================================================
-// SOUND TEST
+// RACE SOUNDS
 // ======================================================
 
 function soundTest() {
@@ -288,20 +252,15 @@ function soundTest() {
     0
   );
 
-
   tone(
     880,
-    0.20,
+    0.18,
     0.10,
     "sine",
     0.13
   );
 }
 
-
-// ======================================================
-// STARTING WHISTLE
-// ======================================================
 
 function startWhistle() {
 
@@ -313,7 +272,6 @@ function startWhistle() {
     0
   );
 
-
   tone(
     1500,
     0.20,
@@ -321,7 +279,6 @@ function startWhistle() {
     "sine",
     0.21
   );
-
 
   tone(
     1850,
@@ -333,20 +290,14 @@ function startWhistle() {
 }
 
 
-// ======================================================
-// JOLT SOUND
-// ======================================================
-
 function joltSound() {
 
   tone(
     140,
     0.12,
     0.12,
-    "square",
-    0
+    "square"
   );
-
 
   tone(
     90,
@@ -355,7 +306,6 @@ function joltSound() {
     "sawtooth",
     0.08
   );
-
 
   tone(
     220,
@@ -367,10 +317,6 @@ function joltSound() {
 }
 
 
-// ======================================================
-// WINNER FANFARE
-// ======================================================
-
 function winnerSound() {
 
   tone(
@@ -381,7 +327,6 @@ function winnerSound() {
     0
   );
 
-
   tone(
     659,
     0.20,
@@ -389,7 +334,6 @@ function winnerSound() {
     "triangle",
     0.16
   );
-
 
   tone(
     784,
@@ -399,13 +343,42 @@ function winnerSound() {
     0.32
   );
 
-
   tone(
     1047,
-    0.60,
+    0.65,
     0.14,
     "triangle",
     0.48
+  );
+}
+
+
+// ======================================================
+// CROWD CHEER
+// ======================================================
+
+function playCrowdCheer() {
+
+  if (
+    !soundOn ||
+    !crowdCheer
+  ) {
+    return;
+  }
+
+  crowdCheer.pause();
+
+  crowdCheer.currentTime = 0;
+
+  crowdCheer.volume = 0.75;
+
+  crowdCheer.play().catch(
+    error => {
+      console.log(
+        "Crowd audio unavailable:",
+        error
+      );
+    }
   );
 }
 
@@ -418,18 +391,14 @@ function startMusic() {
 
   stopMusic();
 
-
   if (!soundOn) {
     return;
   }
 
-
   let beat = 0;
-
 
   musicTimer =
     setInterval(() => {
-
 
       if (
         !running ||
@@ -438,7 +407,6 @@ function startMusic() {
         return;
       }
 
-
       if (
         beat % 4 === 0
       ) {
@@ -446,11 +414,10 @@ function startMusic() {
         tone(
           110,
           0.10,
-          0.04,
+          0.035,
           "triangle"
         );
       }
-
 
       if (
         beat % 4 === 2
@@ -459,11 +426,10 @@ function startMusic() {
         tone(
           165,
           0.07,
-          0.03,
+          0.025,
           "triangle"
         );
       }
-
 
       if (
         beat % 8 === 6
@@ -477,17 +443,11 @@ function startMusic() {
         );
       }
 
-
       beat++;
-
 
     }, 350);
 }
 
-
-// ======================================================
-// STOP BACKGROUND MUSIC
-// ======================================================
 
 function stopMusic() {
 
@@ -497,595 +457,33 @@ function stopMusic() {
       musicTimer
     );
 
-
     musicTimer = null;
   }
 }
 
 
 // ======================================================
-// MARBLE INITIALS
+// CONFETTI
 // ======================================================
 
-function initials(name) {
+let confettiPieces = [];
+let confettiRunning = false;
 
-  return name
-    .split(" ")
-    .map(word => word[0])
-    .join("")
-    .slice(0, 3);
-}
 
+const CONFETTI_COLORS = [
+  "#facc15",
+  "#ef4444",
+  "#3b82f6",
+  "#22c55e",
+  "#a855f7",
+  "#f97316",
+  "#ec4899",
+  "#ffffff"
+];
 
-// ======================================================
-// RESET
-// ======================================================
 
-function reset() {
+function launchConfetti() {
 
-  stopMusic();
+  confettiPieces = [];
 
-
-  results = [];
-
-
-  resultsEl.innerHTML = `
-    <p class="hint">
-      Click <b>PLAY</b> to launch every marble at once.
-      Positions will appear here as each team crosses
-      the finish line.
-    </p>
-  `;
-
-
-  againBtn.hidden = true;
-
-
-  timerEl.textContent =
-    "";
-
-
-  balls =
-    TEAMS.map(
-      (name, i) => ({
-
-        name: name,
-
-        color:
-          COLORS[i],
-
-        x:
-          80 +
-          (i % 12) * 67,
-
-        y:
-          60 -
-          Math.floor(i / 12) * 28,
-
-        vx:
-          (Math.random() - 0.5) * 2,
-
-        vy: 0,
-
-        done: false
-
-      })
-    );
-}
-
-
-// ======================================================
-// PLAY
-// ======================================================
-
-async function play() {
-
-  if (soundOn) {
-    await unlockAudio();
-  }
-
-
-  reset();
-
-
-  startTime =
-    performance.now();
-
-
-  running = true;
-
-
-  playBtn.disabled =
-    true;
-
-
-  playBtn.textContent =
-    "🏁 RACING...";
-
-
-  joltBtn.disabled =
-    false;
-
-
-  if (
-    soundOn &&
-    audioCtx &&
-    audioCtx.state === "running"
-  ) {
-
-    startWhistle();
-
-    startMusic();
-  }
-}
-
-
-// ======================================================
-// JOLT
-// ======================================================
-
-function jolt() {
-
-  if (!running) {
-    return;
-  }
-
-
-  balls.forEach(
-    ball => {
-
-
-      if (!ball.done) {
-
-        ball.vx +=
-          (Math.random() - 0.5) * 5;
-
-
-        ball.vy -=
-          1.5 +
-          Math.random() * 2.5;
-
-
-        ball.x +=
-          (Math.random() - 0.5) * 5;
-      }
-
-    }
-  );
-}
-
-
-// ======================================================
-// COLLISION WITH LINE
-// ======================================================
-
-function seg(
-  ball,
-  x1,
-  y1,
-  x2,
-  y2,
-  width = 10
-) {
-
-  const dx =
-    x2 - x1;
-
-
-  const dy =
-    y2 - y1;
-
-
-  const lengthSquared =
-    dx * dx +
-    dy * dy;
-
-
-  let t =
-    (
-      (ball.x - x1) * dx +
-      (ball.y - y1) * dy
-    ) /
-    lengthSquared;
-
-
-  t =
-    Math.max(
-      0,
-      Math.min(
-        1,
-        t
-      )
-    );
-
-
-  const px =
-    x1 + t * dx;
-
-
-  const py =
-    y1 + t * dy;
-
-
-  const nx =
-    ball.x - px;
-
-
-  const ny =
-    ball.y - py;
-
-
-  const distance =
-    Math.hypot(
-      nx,
-      ny
-    );
-
-
-  if (
-    distance < R + width &&
-    distance > 0.01
-  ) {
-
-    const ux =
-      nx / distance;
-
-
-    const uy =
-      ny / distance;
-
-
-    ball.x =
-      px +
-      ux *
-      (R + width + 0.5);
-
-
-    ball.y =
-      py +
-      uy *
-      (R + width + 0.5);
-
-
-    const dot =
-      ball.vx * ux +
-      ball.vy * uy;
-
-
-    if (dot < 0) {
-
-      ball.vx -=
-        1.72 *
-        dot *
-        ux;
-
-
-      ball.vy -=
-        1.72 *
-        dot *
-        uy;
-    }
-  }
-}
-
-
-// ======================================================
-// PEG COLLISION
-// ======================================================
-
-function peg(
-  ball,
-  x,
-  y
-) {
-
-  const dx =
-    ball.x - x;
-
-
-  const dy =
-    ball.y - y;
-
-
-  const distance =
-    Math.hypot(
-      dx,
-      dy
-    );
-
-
-  if (
-    distance < R + 11 &&
-    distance > 0.01
-  ) {
-
-    const ux =
-      dx / distance;
-
-
-    const uy =
-      dy / distance;
-
-
-    ball.x =
-      x +
-      ux * (R + 11);
-
-
-    ball.y =
-      y +
-      uy * (R + 11);
-
-
-    const dot =
-      ball.vx * ux +
-      ball.vy * uy;
-
-
-    if (dot < 0) {
-
-      ball.vx -=
-        1.75 *
-        dot *
-        ux;
-
-
-      ball.vy -=
-        1.75 *
-        dot *
-        uy;
-    }
-  }
-}
-
-
-// ======================================================
-// LEADERBOARD
-// ======================================================
-
-function addResult(ball) {
-
-  results.push(
-    ball.name
-  );
-
-
-  // Winner fanfare
-  if (
-    results.length === 1
-  ) {
-
-    winnerSound();
-  }
-
-
-  const list =
-    document.createElement(
-      "ol"
-    );
-
-
-  results.forEach(
-    (name, i) => {
-
-      const item =
-        document.createElement(
-          "li"
-        );
-
-
-      if (i === 0) {
-
-        item.className =
-          "gold";
-
-      }
-      else if (i === 1) {
-
-        item.className =
-          "silver";
-
-      }
-      else if (i === 2) {
-
-        item.className =
-          "bronze";
-      }
-
-
-      item.innerHTML = `
-        <span class="rank">
-          ${i + 1}
-        </span>
-
-        <span
-          class="dot"
-          style="background:${COLORS[TEAMS.indexOf(name)]}"
-        ></span>
-
-        <span>
-          ${name}
-        </span>
-      `;
-
-
-      list.appendChild(
-        item
-      );
-
-    }
-  );
-
-
-  resultsEl.replaceChildren(
-    list
-  );
-
-
-  // Entire race finished
-  if (
-    results.length ===
-    TEAMS.length
-  ) {
-
-    stopMusic();
-
-
-    running =
-      false;
-
-
-    playBtn.disabled =
-      false;
-
-
-    playBtn.textContent =
-      "▶ PLAY";
-
-
-    joltBtn.disabled =
-      true;
-
-
-    againBtn.hidden =
-      false;
-  }
-}
-
-
-// ======================================================
-// GAME PHYSICS
-// ======================================================
-
-function update(now) {
-
-
-  // Timer
-
-  if (
-    now -
-    lastTimerUpdate >
-    100
-  ) {
-
-    timerEl.textContent =
-      (
-        (now - startTime) /
-        1000
-      ).toFixed(1) +
-      "s";
-
-
-    lastTimerUpdate =
-      now;
-  }
-
-
-  const rotation =
-    now / 550;
-
-
-  balls.forEach(
-    ball => {
-
-
-      if (ball.done) {
-        return;
-      }
-
-
-      // Gravity
-
-      ball.vy +=
-        0.085;
-
-
-      // Random sideways movement
-
-      ball.vx +=
-        (
-          Math.random() -
-          0.5
-        ) *
-        0.028;
-
-
-      ball.vx *=
-        0.998;
-
-
-      ball.vy =
-        Math.min(
-          6,
-          ball.vy
-        );
-
-
-      ball.x +=
-        ball.vx;
-
-
-      ball.y +=
-        ball.vy;
-
-
-      // LEFT WALL
-
-      if (
-        ball.x <
-        42 + R
-      ) {
-
-        ball.x =
-          42 + R;
-
-
-        ball.vx =
-          Math.abs(
-            ball.vx
-          ) *
-          0.8;
-      }
-
-
-      // RIGHT WALL
-
-      if (
-        ball.x >
-        W - 42 - R
-      ) {
-
-        ball.x =
-          W - 42 - R;
-
-
-        ball.vx =
-          -Math.abs(
-            ball.vx
-          ) *
-          0.8;
-      }
-
-
-      // ==================================================
-      // OBSTACLE 1
-      // PEG SLALOM
-      // ==================================================
-
-      for (
-        let row = 0;
-        row < 3;
-        row++
-      ) {
-
-        for (
-          let x =
-            105 +
-            (row % 2) * 45;
-
-          x < W - 70;
-
-          x += 90
-        ) {
-
-   
+  confettiRunning
