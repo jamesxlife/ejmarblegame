@@ -39,17 +39,13 @@
       </p>
     </div>
 
-
     <div class="controls">
 
       <button id="play">
         ▶ PLAY
       </button>
 
-      <button
-        id="jolt"
-        disabled
-      >
+      <button id="jolt" disabled>
         ⚡ JOLT
       </button>
 
@@ -62,6 +58,12 @@
   </header>
 
 
+  <div id="winnerBanner" class="winner-banner" hidden>
+    <div class="winner-trophy">🏆</div>
+    <div id="winnerText">WINNER!</div>
+  </div>
+
+
   <section class="layout">
 
     <div class="board">
@@ -71,6 +73,13 @@
         width="900"
         height="1240"
         aria-label="Football marble race course"
+      ></canvas>
+
+      <canvas
+        id="confetti"
+        width="900"
+        height="1240"
+        aria-hidden="true"
       ></canvas>
 
     </div>
@@ -123,8 +132,10 @@
 </main>
 
 
+audio/crowd-cheer.mp3</audio>
+
+
 game.jsscript>
 
 </body>
-
 </html>
