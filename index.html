@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <meta name="description" content="EJ's Football Marble Cup">
   <title>EJ's Football Marble Cup</title>
   <link rel="stylesheet" href="style.css">
@@ -13,49 +13,110 @@
 <main class="page">
 
   <header class="hero">
+
     <div>
-      <div class="kicker">PREMIER LEAGUE + WELSH CLUBS</div>
-      <h1>⚽ EJ's Football Marble Cup</h1>
-      <p>25 teams • 5 obstacle zones • first marble home wins</p>
+      <div class="kicker">
+        PREMIER LEAGUE + WELSH CLUBS
+      </div>
+
+      <h1>
+        ⚽ EJ's Football Marble Cup
+      </h1>
+
+      <p>
+        25 teams • 5 obstacle zones • first marble home wins
+      </p>
     </div>
 
     <div class="controls">
-      <button id="play">▶ PLAY</button>
-      <button id="jolt" disabled>⚡ JOLT</button>
-      <button id="sound">🔊 SOUND ON</button>
+
+      <button id="play">
+        ▶ PLAY
+      </button>
+
+      <button id="jolt" disabled>
+        ⚡ JOLT
+      </button>
+
+      <button id="sound">
+        🔊 SOUND ON
+      </button>
+
     </div>
+
   </header>
+
+
+  <div
+    id="winnerBanner"
+    class="winner-banner"
+    hidden
+  >
+    <div class="winner-trophy">
+      🏆
+    </div>
+
+    <div id="winnerText">
+      WINNER!
+    </div>
+  </div>
+
 
   <section class="layout">
 
     <div class="board">
+
       <canvas
         id="game"
         width="900"
         height="1240"
-        aria-label="Football marble race course"
       ></canvas>
+
+      <canvas
+        id="confetti"
+        width="900"
+        height="1240"
+      ></canvas>
+
     </div>
+
 
     <aside class="leaderboard">
 
       <div class="leader-head">
+
         <div>
-          <div class="live">LIVE RESULTS</div>
-          <h2>🏆 Leaderboard</h2>
+
+          <div class="live">
+            LIVE RESULTS
+          </div>
+
+          <h2>
+            🏆 Leaderboard
+          </h2>
+
         </div>
 
         <span id="timer"></span>
+
       </div>
+
 
       <div id="results">
+
         <p class="hint">
           Click <b>PLAY</b> to launch every marble at once.
-          Positions will appear here as each team crosses the line.
+          Positions appear here at the finish.
         </p>
+
       </div>
 
-      <button id="again" class="again" hidden>
+
+      <button
+        id="again"
+        class="again"
+        hidden
+      >
         RACE AGAIN ↻
       </button>
 
@@ -64,6 +125,10 @@
   </section>
 
 </main>
+
+
+crowd-cheer.mp3</audio>
+
 
 <script src="game.js"></script>
 
