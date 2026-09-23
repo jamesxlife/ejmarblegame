@@ -1,14 +1,154 @@
-const TEAMS=["Arsenal","Aston Villa","Bournemouth","Brentford","Brighton","Burnley","Chelsea","Crystal Palace","Everton","Fulham","Leeds United","Liverpool","Manchester City","Manchester United","Newcastle United","Nottingham Forest","Sunderland","Tottenham Hotspur","West Ham United","Wolverhampton Wanderers","Swansea City","Wrexham","Cardiff City","Tonna FC","YG Castell-Nedd FC"];
-const COLORS=["#e11d48","#7f1d1d","#dc2626","#ef4444","#2563eb","#7f1d1d","#1d4ed8","#dc2626","#2563eb","#111827","#fde047","#dc2626","#60a5fa","#ef4444","#111827","#ef4444","#dc2626","#f8fafc","#7c2d12","#f97316","#f8fafc","#dc2626","#2563eb","#16a34a","#f59e0b"];
-const W=900,H=1240,R=11,c=document.getElementById('game'),ctx=c.getContext('2d'),playBtn=document.getElementById('play'),joltBtn=document.getElementById('jolt'),againBtn=document.getElementById('again'),resultsEl=document.getElementById('results'),timerEl=document.getElementById('timer');
-let balls=[],results=[],running=false,start=0,lastTimer=0;
-const initials=n=>n.split(' ').map(x=>x[0]).join('').slice(0,3);
-function reset(){results=[];resultsEl.innerHTML='<p class="hint">Click <b>PLAY</b> to launch every marble at once. Positions will appear here as each team crosses the line.</p>';againBtn.hidden=true;timerEl.textContent='';balls=TEAMS.map((name,i)=>({name,color:COLORS[i],x:80+(i%12)*67,y:60-Math.floor(i/12)*28,vx:(Math.random()-.5)*2,vy:0,done:false}));}
-function play(){reset();start=performance.now();running=true;playBtn.disabled=true;playBtn.textContent='🏁 RACING...';joltBtn.disabled=false;}
-function jolt(){if(!running)return;balls.forEach(b=>{if(!b.done){b.vx+=(Math.random()-.5)*5;b.vy-=1.5+Math.random()*2.5;b.x+=(Math.random()-.5)*5;}})}
-function seg(b,x1,y1,x2,y2,w=10){let dx=x2-x1,dy=y2-y1,l=dx*dx+dy*dy,t=((b.x-x1)*dx+(b.y-y1)*dy)/l;t=Math.max(0,Math.min(1,t));let px=x1+t*dx,py=y1+t*dy,nx=b.x-px,ny=b.y-py,d=Math.hypot(nx,ny);if(d<R+w&&d>.01){let ux=nx/d,uy=ny/d;b.x=px+ux*(R+w+.5);b.y=py+uy*(R+w+.5);let dot=b.vx*ux+b.vy*uy;if(dot<0){b.vx-=1.72*dot*ux;b.vy-=1.72*dot*uy}}}
-function peg(b,x,y){let dx=b.x-x,dy=b.y-y,d=Math.hypot(dx,dy);if(d<R+11&&d>.01){let ux=dx/d,uy=dy/d;b.x=x+ux*(R+11);b.y=y+uy*(R+11);let dot=b.vx*ux+b.vy*uy;if(dot<0){b.vx-=1.75*dot*ux;b.vy-=1.75*dot*uy}}}
-function addResult(b){results.push(b.name);const ol=document.createElement('ol');results.forEach((name,i)=>{const li=document.createElement('li');if(i===0)li.className='gold';else if(i===1)li.className='silver';else if(i===2)li.className='bronze';li.innerHTML=`<span class="rank">${i+1}</span><span class="dot" style="background:${COLORS[TEAMS.indexOf(name)]}"></span><span>${name}</span>`;ol.appendChild(li)});resultsEl.replaceChildren(ol);if(results.length===TEAMS.length){running=false;playBtn.disabled=false;playBtn.textContent='▶ PLAY';joltBtn.disabled=true;againBtn.hidden=false}}
-function update(now){if(now-lastTimer>100){timerEl.textContent=((now-start)/1000).toFixed(1)+'s';lastTimer=now}const a=now/550;balls.forEach(b=>{if(b.done)return;b.vy+=.085;b.vx+=(Math.random()-.5)*.028;b.vx*=.998;b.vy=Math.min(6,b.vy);b.x+=b.vx;b.y+=b.vy;if(b.x<42+R){b.x=42+R;b.vx=Math.abs(b.vx)*.8}if(b.x>W-42-R){b.x=W-42-R;b.vx=-Math.abs(b.vx)*.8}for(let row=0;row<3;row++)for(let x=105+(row%2)*45;x<W-70;x+=90)peg(b,x,190+row*45);seg(b,55,390,380,390);seg(b,520,460,845,460);seg(b,50,600,390,720);seg(b,850,600,510,720);for(let q=0;q<2;q++){let ang=a+q*Math.PI/2,dx=Math.cos(ang)*125,dy=Math.sin(ang)*125;seg(b,W/2-dx,815-dy,W/2+dx,815+dy,9)}for(let row=0;row<3;row++)for(let x=105+(row%2)*45;x<W-70;x+=90)peg(b,x,965+row*45);if(b.y>=H-70){b.y=H-70;b.done=true;addResult(b)}});for(let i=0;i<balls.length;i++)for(let j=i+1;j<balls.length;j++){let A=balls[i],B=balls[j];if(A.done||B.done)continue;let dx=B.x-A.x,dy=B.y-A.y,d=Math.hypot(dx,dy);if(d>0&&d<2*R){let ux=dx/d,uy=dy/d,o=2*R-d;A.x-=ux*o/2;A.y-=uy*o/2;B.x+=ux*o/2;B.y+=uy*o/2;let rel=(B.vx-A.vx)*ux+(B.vy-A.vy)*uy;if(rel<0){A.vx+=rel*ux*.9;A.vy+=rel*uy*.9;B.vx-=rel*ux*.9;B.vy-=rel*uy*.9}}}}
-function draw(){ctx.clearRect(0,0,W,H);for(let y=0;y<H;y+=80){ctx.fillStyle=(y/80)%2?'#075f39':'#087447';ctx.fillRect(0,y,W,80)}ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=3;ctx.strokeRect(30,15,W-60,H-30);ctx.textAlign='center';ctx.font='900 23px system-ui';ctx.fillStyle='#fff';ctx.fillText('START',W/2,38);ctx.fillText('FINISH',W/2,H-35);ctx.beginPath();ctx.moveTo(32,H-70);ctx.lineTo(W-32,H-70);ctx.stroke();ctx.font='800 15px system-ui';ctx.fillStyle='rgba(255,255,255,.85)';['1  PEG SLALOM','2  GATE DROP','3  THE FUNNEL','4  ROTATING CROSS','5  PINBALL ALLEY'].forEach((t,i)=>ctx.fillText(t,W/2,[155,360,570,775,935][i]));ctx.fillStyle='#facc15';for(const base of [190,965])for(let row=0;row<3;row++)for(let x=105+(row%2)*45;x<W-70;x+=90){ctx.beginPath();ctx.arc(x,base+row*45,11,0,Math.PI*2);ctx.fill()}ctx.strokeStyle='#38bdf8';ctx.lineWidth=20;ctx.beginPath();ctx.moveTo(55,390);ctx.lineTo(380,390);ctx.moveTo(520,460);ctx.lineTo(845,460);ctx.stroke();ctx.strokeStyle='#fb923c';ctx.lineWidth=18;ctx.beginPath();ctx.moveTo(50,600);ctx.lineTo(390,720);ctx.moveTo(850,600);ctx.lineTo(510,720);ctx.stroke();let a=performance.now()/550;ctx.save();ctx.translate(W/2,815);ctx.rotate(a);ctx.strokeStyle='#c084fc';ctx.lineWidth=18;ctx.beginPath();ctx.moveTo(-125,0);ctx.lineTo(125,0);ctx.moveTo(0,-125);ctx.lineTo(0,125);ctx.stroke();ctx.restore();balls.forEach(b=>{ctx.shadowColor='rgba(0,0,0,.8)';ctx.shadowBlur=8;ctx.fillStyle=b.color;ctx.beginPath();ctx.arc(b.x,b.y,R,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#fff';ctx.font='900 7px system-ui';ctx.fillText(initials(b.name),b.x,b.y+2.5)})}
-function loop(now){if(running)update(now);draw();requestAnimationFrame(loop)}playBtn.addEventListener('click',play);joltBtn.addEventListener('click',jolt);againBtn.addEventListener('click',play);reset();requestAnimationFrame(loop);
+const TEAMS = [
+  "Arsenal",
+  "Aston Villa",
+  "Bournemouth",
+  "Brentford",
+  "Brighton",
+  "Burnley",
+  "Chelsea",
+  "Crystal Palace",
+  "Everton",
+  "Fulham",
+  "Leeds United",
+  "Liverpool",
+  "Manchester City",
+  "Manchester United",
+  "Newcastle United",
+  "Nottingham Forest",
+  "Sunderland",
+  "Tottenham Hotspur",
+  "West Ham United",
+  "Wolverhampton Wanderers",
+  "Swansea City",
+  "Wrexham",
+  "Cardiff City",
+  "Tonna FC",
+  "YG Castell-Nedd FC"
+];
+
+const COLORS = [
+  "#e11d48",
+  "#7f1d1d",
+  "#dc2626",
+  "#ef4444",
+  "#2563eb",
+  "#7f1d1d",
+  "#1d4ed8",
+  "#dc2626",
+  "#2563eb",
+  "#111827",
+  "#fde047",
+  "#dc2626",
+  "#60a5fa",
+  "#ef4444",
+  "#111827",
+  "#ef4444",
+  "#dc2626",
+  "#f8fafc",
+  "#7c2d12",
+  "#f97316",
+  "#f8fafc",
+  "#dc2626",
+  "#2563eb",
+  "#16a34a",
+  "#f59e0b"
+];
+
+const W = 900;
+const H = 1240;
+const R = 11;
+
+const c = document.getElementById("game");
+const ctx = c.getContext("2d");
+
+const playBtn = document.getElementById("play");
+const joltBtn = document.getElementById("jolt");
+const againBtn = document.getElementById("again");
+const resultsEl = document.getElementById("results");
+const timerEl = document.getElementById("timer");
+const soundBtn = document.getElementById("sound");
+
+let balls = [];
+let results = [];
+let running = false;
+let start = 0;
+let lastTimer = 0;
+
+
+// ======================================================
+// EJ'S FOOTBALL MARBLE CUP AUDIO
+// ======================================================
+
+let audioCtx = null;
+let soundOn = true;
+let musicTimer = null;
+
+function getAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  if (audioCtx.state === "suspended") {
+    audioCtx.resume();
+  }
+
+  return audioCtx;
+}
+
+
+function tone(
+  freq,
+  duration = 0.15,
+  volume = 0.08,
+  type = "sine",
+  delay = 0
+) {
+  if (!soundOn) return;
+
+  const ac = getAudio();
+  const osc = ac.createOscillator();
+  const gain = ac.createGain();
+
+  osc.type = type;
+  osc.frequency.value = freq;
+
+  gain.gain.setValueAtTime(
+    volume,
+    ac.currentTime + delay
+  );
+
+  gain.gain.exponentialRampToValueAtTime(
+    0.001,
+    ac.currentTime + delay + duration
+  );
+
+  osc.connect(gain);
+  gain.connect(ac.destination);
+
+  osc.start(ac.currentTime + delay);
+  osc.stop(ac.currentTime + delay + duration);
+}
+
+
+// ======================================================
+// STARTING WHISTLE
+// ======================================================
+
+function startWhistle() {
+  if (!soundOn) return;
+
+  tone(1200, 0.18, 0.09, "sine", 0);
+  tone(1500, 0.20, 0.09, "sine", 0.20);
+  tone(1850, 0.45, 0.10, "sine", 0.42);
+}
+
+
+// ======================================================
+// JOLT SOUND
+// ======================================================
+
+function joltSound() {
+  if (!soundOn) return;
+
+  tone(140, 0.12, 0.12, "square");
+  tone
