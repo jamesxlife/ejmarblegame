@@ -26,6 +26,7 @@
   <header class="hero">
 
     <div>
+
       <div class="kicker">
         PREMIER LEAGUE + WELSH CLUBS
       </div>
@@ -37,7 +38,9 @@
       <p>
         25 teams • 5 obstacle zones • first marble home wins
       </p>
+
     </div>
+
 
     <div class="controls">
 
@@ -45,7 +48,10 @@
         ▶ PLAY
       </button>
 
-      <button id="jolt" disabled>
+      <button
+        id="jolt"
+        disabled
+      >
         ⚡ JOLT
       </button>
 
@@ -58,26 +64,7 @@
   </header>
 
 
-  <!-- WINNER CELEBRATION -->
-
-  <div
-    id="winnerBanner"
-    class="winner-banner"
-    hidden
-  >
-    <div class="winner-trophy">
-      🏆
-    </div>
-
-    <div id="winnerText">
-      WINNER!
-    </div>
-  </div>
-
-
   <section class="layout">
-
-    <!-- GAME -->
 
     <div class="board">
 
@@ -88,19 +75,8 @@
         aria-label="Football marble race course"
       ></canvas>
 
-      <!-- CONFETTI LAYER -->
-
-      <canvas
-        id="confetti"
-        width="900"
-        height="1240"
-        aria-hidden="true"
-      ></canvas>
-
     </div>
 
-
-    <!-- LEADERBOARD -->
 
     <aside class="leaderboard">
 
@@ -127,8 +103,7 @@
 
         <p class="hint">
           Click <b>PLAY</b> to launch every marble at once.
-          Positions will appear here as each team crosses
-          the finish line.
+          Positions will appear here as each team crosses the line.
         </p>
 
       </div>
@@ -148,17 +123,6 @@
 
 </main>
 
-
-<!-- CROWD CHEER AUDIO -->
-
-<audio
-  id="crowdCheer"
-  src="audio/crowd-cheer.mp3"
-  preload="auto"
-></audio>
-
-
-<!-- GAME JAVASCRIPT -->
 
 <script src="game.js"></script>
 
